@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>精选刷流</title>
+    <style>
+      :root {
+        --bg: #0a0e15;
+        --panel: rgba(22, 28, 42, 0.9);
+        --text: #eef3ff;
+        --muted: #a6b3ce;
+        --line: rgba(140, 164, 231, 0.28);
+        --primary: #4f8cff;
+        --ok: #58d59a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: radial-gradient(900px 500px at 90% -10%, rgba(79, 140, 255, 0.24), transparent 60%), var(--bg);
+      }
+      .wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .bar {
+        display: grid;
+        grid-template-columns: 1.4fr repeat(4, 0.8fr) auto;
+        gap: 10px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+        position: sticky;
+        top: 12px;
+        z-index: 10;
+      }
+      input, select, button {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 9px 10px;
+      }
+      button { cursor: pointer; }
+      button.primary { background: linear-gradient(135deg, #4f8cff, #6e7bff); border: none; }
+      .hint {
+        color: var(--muted);
+        margin: 10px 0 14px;
+        font-size: 13px;
+      }
+      .viewer {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 14px;
+      }
+      .stage, .meta {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+      }
+      .stage {
+        min-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+      .stage video, .stage img {
+        width: 100%;
+        height: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+        background: #03060d;
+      }
+      .meta { padding: 14px; }
+      .title { font-size: 22px; line-height: 1.4; margin-bottom: 10px; }
+      .line { margin: 6px 0; color: var(--muted); }
+      .line strong { color: var(--text); }
+      .actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .status { margin-top: 12px; color: var(--ok); min-height: 20px; }
+      .badge {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .badge.read {
+        color: #8ff0bf;
+        border-color: rgba(88, 213, 154, 0.5);
+        background: rgba(88, 213, 154, 0.12);
+      }
+      @media (max-width: 1024px) {
+        .viewer { grid-template-columns: 1fr; }
+        .bar { grid-template-columns: 1fr 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="bar">
+        <input id="keyword" placeholder="关键词（如 AIGC）" />
+        <input id="minLikes" type="number" min="0" value="3000" />
+        <input id="days" type="number" min="1" max="365" value="7" />
+        <select id="sort">
+          <option value="likes_desc">点赞从高到低</option>
+          <option value="newest">最新优先</option>
+        </select>
+        <select id="mode">
+          <option value="">全部</option>
+          <option value="unread">只看未读</option>
+          <option value="starred">只看已标星</option>
+        </select>
+        <button class="primary" id="loadBtn">加载列表</button>
+      </div>
+      <div class="hint">快捷键：J 下一条，K 上一条，S 标星，O 打开原帖，空格 播放/暂停</div>
+      <div class="viewer">
+        <div class="stage" id="stage"></div>
+        <div class="meta">
+          <div class="title" id="title">请先加载列表</div>
+          <div class="line"><strong>进度：</strong><span id="progress">0 / 0</span></div>
+          <div class="line"><strong>作者：</strong><span id="author">-</span></div>
+          <div class="line"><strong>发布时间：</strong><span id="publish">-</span></div>
+          <div class="line"><strong>点赞：</strong><span id="likes">-</span></div>
+          <div class="line"><strong>关键词：</strong><span id="kw">-</span></div>
+          <div class="line"><strong>状态：</strong><span id="flags">未读/未标星</span></div>
+          <div id="readBadge" class="badge">未刷过</div>
+          <div class="actions">
+            <button id="prevBtn">上一条 (K)</button>
+            <button id="nextBtn">下一条 (J)</button>
+            <button id="starBtn">标星 (S)</button>
+            <button id="openBtn">打开原帖 (O)</button>
+          </div>
+          <div class="status" id="status"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const state = {
+        items: [],
+        index: 0,
+        apiKey: "",
+        markedRead: new Set(),
+      };
+
+      const stage = document.getElementById("stage");
+      const statusEl = document.getElementById("status");
+
+      function setStatus(msg, ok = true) {
+        statusEl.textContent = msg || "";
+        statusEl.style.color = ok ? "var(--ok)" : "#ff8f8f";
+      }
+
+      function esc(s) {
+        return String(s || "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function current() {
+        return state.items[state.index] || null;
+      }
+
+      function authHeaders() {
+        return {
+          "Content-Type": "application/json",
+          "X-API-Key": state.apiKey || "",
+        };
+      }
+
+      async function bootstrap() {
+        try {
+          const res = await fetch("/api/dashboard/bootstrap");
+          if (!res.ok) return;
+          const data = await res.json();
+          state.apiKey = data.api_key || "";
+        } catch (_) {}
+      }
+
+      async function loadList(resetIndex = true) {
+        const keyword = document.getElementById("keyword").value.trim();
+        const minLikes = Number(document.getElementById("minLikes").value || 0);
+        const days = Number(document.getElementById("days").value || 7);
+        const sort = document.getElementById("sort").value;
+        const mode = document.getElementById("mode").value;
+        const qs = new URLSearchParams({
+          platform: "xiaohongshu",
+          keyword,
+          min_likes: String(minLikes),
+          days: String(days),
+          sort,
+          limit: "300",
+        });
+        if (mode === "unread") qs.set("only_unread", "true");
+        if (mode === "starred") qs.set("only_starred", "true");
+
+        const res = await fetch(`/api/feed?${qs.toString()}`);
+        if (!res.ok) {
+          setStatus("加载失败", false);
+          return;
+        }
+        state.items = await res.json();
+        if (resetIndex) state.index = 0;
+        state.markedRead.clear();
+        render();
+        if (!state.items.length && mode === "unread") {
+          setStatus("你已经读完今天的 AI 知识了，真棒");
+        } else {
+          setStatus(`已加载 ${state.items.length} 条`);
+        }
+      }
+
+      async function markRead(item) {
+        if (!item || !state.apiKey || item.is_read || state.markedRead.has(item.id)) return;
+        state.markedRead.add(item.id);
+        try {
+          await fetch(`/api/feed/${item.id}/read`, {
+            method: "POST",
+            headers: authHeaders(),
+          });
+          item.is_read = true;
+          renderFlags(item);
+          updateReadBadge(item);
+          checkCompletion();
+        } catch (_) {}
+      }
+
+      async function toggleStar() {
+        const item = current();
+        if (!item || !state.apiKey) return;
+        const target = !item.is_starred;
+        const res = await fetch(`/api/feed/${item.id}/star?starred=${target ? "true" : "false"}`, {
+          method: "POST",
+          headers: authHeaders(),
+        });
+        if (!res.ok) {
+          setStatus("标星失败，请检查 API Key", false);
+          return;
+        }
+        item.is_starred = target;
+        renderFlags(item);
+        setStatus(target ? "已标星" : "已取消标星");
+      }
+
+      function renderFlags(item) {
+        document.getElementById("flags").textContent =
+          `${item.is_read ? "已读" : "未读"} / ${item.is_starred ? "已标星" : "未标星"}`;
+      }
+
+      function updateReadBadge(item) {
+        const badge = document.getElementById("readBadge");
+        if (!item) {
+          badge.className = "badge";
+          badge.textContent = "未刷过";
+          return;
+        }
+        if (item.is_read) {
+          badge.className = "badge read";
+          badge.textContent = "已刷过";
+        } else {
+          badge.className = "badge";
+          badge.textContent = "未刷过";
+        }
+      }
+
+      function checkCompletion() {
+        if (!state.items.length) {
+          return;
+        }
+        const allRead = state.items.every((it) => it.is_read);
+        if (allRead) {
+          setStatus("你已经读完今天的 AI 知识了，真棒");
+        }
+      }
+
+      function preloadNext() {
+        const next = state.items[state.index + 1];
+        if (!next) return;
+        if (next.video_url) {
+          const v = document.createElement("video");
+          v.preload = "metadata";
+          v.src = `/api/feed/${next.id}/stream`;
+        } else if (next.thumbnail) {
+          const img = new Image();
+          img.src = next.thumbnail;
+        }
+      }
+
+      function renderStage(item) {
+        stage.innerHTML = "";
+        if (!item) {
+          stage.innerHTML = "<div style='color:#9fb0d6'>暂无内容</div>";
+          return;
+        }
+
+        if (item.video_url) {
+          const v = document.createElement("video");
+          v.controls = true;
+          v.autoplay = true;
+          v.muted = true;
+          v.playsInline = true;
+          v.preload = "auto";
+          v.src = `/api/feed/${item.id}/stream`;
+          v.onerror = () => {
+            stage.innerHTML = `<img src="${esc(item.thumbnail)}" alt="封面" />`;
+            setStatus("视频播放失败，已回退到封面预览", false);
+          };
+          stage.appendChild(v);
+        } else if (item.thumbnail) {
+          stage.innerHTML = `<img src="${esc(item.thumbnail)}" alt="封面" />`;
+        } else {
+          stage.innerHTML = "<div style='color:#9fb0d6'>无视频/封面</div>";
+        }
+      }
+
+      function render() {
+        const item = current();
+        document.getElementById("progress").textContent = `${state.items.length ? state.index + 1 : 0} / ${state.items.length}`;
+        if (!item) {
+          document.getElementById("title").textContent = "暂无可刷内容";
+          document.getElementById("author").textContent = "-";
+          document.getElementById("publish").textContent = "-";
+          document.getElementById("likes").textContent = "-";
+          document.getElementById("kw").textContent = "-";
+          document.getElementById("flags").textContent = "-";
+          updateReadBadge(null);
+          renderStage(null);
+          return;
+        }
+        document.getElementById("title").textContent = item.title || "(无标题)";
+        document.getElementById("author").textContent = item.author || "-";
+        document.getElementById("publish").textContent = item.publish_time || "-";
+        document.getElementById("likes").textContent = String(item.likes || 0);
+        document.getElementById("kw").textContent = item.keyword || "-";
+        renderFlags(item);
+        updateReadBadge(item);
+        renderStage(item);
+        markRead(item);
+        preloadNext();
+        checkCompletion();
+      }
+
+      function next() {
+        if (!state.items.length) return;
+        state.index = Math.min(state.items.length - 1, state.index + 1);
+        render();
+      }
+
+      function prev() {
+        if (!state.items.length) return;
+        state.index = Math.max(0, state.index - 1);
+        render();
+      }
+
+      function openOrigin() {
+        const item = current();
+        if (!item) return;
+        window.open(item.url, "_blank");
+      }
+
+      document.getElementById("loadBtn").addEventListener("click", () => loadList(true));
+      document.getElementById("nextBtn").addEventListener("click", next);
+      document.getElementById("prevBtn").addEventListener("click", prev);
+      document.getElementById("openBtn").addEventListener("click", openOrigin);
+      document.getElementById("starBtn").addEventListener("click", toggleStar);
+
+      document.addEventListener("keydown", (e) => {
+        if (e.target && ["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
+        if (e.key === "j" || e.key === "J" || e.key === "ArrowDown") next();
+        if (e.key === "k" || e.key === "K" || e.key === "ArrowUp") prev();
+        if (e.key === "s" || e.key === "S") toggleStar();
+        if (e.key === "o" || e.key === "O") openOrigin();
+        if (e.key === " ") {
+          const v = stage.querySelector("video");
+          if (v) {
+            e.preventDefault();
+            if (v.paused) v.play();
+            else v.pause();
+          }
+        }
+      });
+
+      (async function init() {
+        await bootstrap();
+        await loadList(true);
+      })();
+    </script>
+  </body>
+</html>

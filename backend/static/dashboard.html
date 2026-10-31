@@ -1,0 +1,2293 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>选题助手控制台</title>
+    <style>
+      :root {
+        --background: #f8fafc;
+        --foreground: #0f172a;
+        --card: #ffffff;
+        --card-foreground: #0f172a;
+        --muted: #64748b;
+        --muted-bg: #f1f5f9;
+        --border: #e2e8f0;
+        --ring: #94a3b8;
+        --primary: #0f172a;
+        --primary-foreground: #f8fafc;
+        --secondary: #f8fafc;
+        --secondary-hover: #f1f5f9;
+        --destructive: #dc2626;
+        --destructive-foreground: #ffffff;
+        --ok: #15803d;
+        --warn: #b45309;
+        --err: #dc2626;
+        --radius: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--foreground);
+        background: var(--background);
+        font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.5;
+      }
+
+      .app {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 28px 20px 40px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        color: var(--card-foreground);
+      }
+
+      h1 {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      h2 {
+        margin-bottom: 14px;
+        font-size: 18px;
+        font-weight: 650;
+      }
+
+      h3 {
+        margin: 12px 0 10px;
+        font-size: 15px;
+        font-weight: 630;
+      }
+
+      a {
+        color: #334155;
+      }
+
+      .topbar {
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--card);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      }
+
+      .topbar-main {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px;
+      }
+
+      .headline .muted {
+        display: block;
+        margin-top: 6px;
+      }
+
+      .manual-trigger {
+        min-width: 320px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+      }
+
+      .manual-trigger .muted {
+        min-height: 20px;
+        text-align: right;
+      }
+
+      .runtime-status {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .runtime-lamp {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #94a3b8;
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08) inset;
+      }
+
+      .runtime-lamp.ok {
+        background: var(--ok);
+      }
+
+      .runtime-lamp.warn {
+        background: var(--warn);
+      }
+
+      .runtime-lamp.err {
+        background: var(--err);
+      }
+
+      .tabs-wrap {
+        position: sticky;
+        top: 10px;
+        z-index: 10;
+        margin-bottom: 16px;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: rgba(248, 250, 252, 0.92);
+        backdrop-filter: blur(6px);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+      }
+
+      .tab-btn {
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        border-radius: 10px;
+        padding: 9px 14px;
+        min-height: 36px;
+        font-size: 14px;
+        font-weight: 620;
+        transition: all 0.16s ease;
+      }
+
+      .tab-btn.active {
+        color: var(--foreground);
+        background: var(--card);
+        border-color: var(--border);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      }
+
+      .tab-btn:hover:not(.active) {
+        color: var(--foreground);
+        background: var(--secondary-hover);
+      }
+
+      .history-subtabs {
+        display: inline-flex;
+        gap: 6px;
+        margin-bottom: 14px;
+        padding: 4px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--muted-bg);
+      }
+
+      .history-tab-btn {
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        border-radius: 8px;
+        padding: 7px 12px;
+        min-height: 34px;
+        font-size: 13px;
+        font-weight: 620;
+      }
+
+      .history-tab-btn.active {
+        color: var(--foreground);
+        background: var(--card);
+        border-color: var(--border);
+      }
+
+      .history-tab-btn:hover:not(.active) {
+        color: var(--foreground);
+        background: #e9eef5;
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .history-subpanel {
+        display: none;
+      }
+
+      .history-subpanel.active {
+        display: block;
+      }
+
+      .task-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .card {
+        margin-bottom: 0;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--card);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .row:last-child {
+        margin-bottom: 0;
+      }
+
+      .field-label {
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .toggle-field {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 600;
+        user-select: none;
+      }
+
+      .platform-select {
+        position: relative;
+        min-width: 240px;
+      }
+
+      .platform-select-inline {
+        min-width: 200px;
+        width: 220px;
+      }
+
+      .platform-select-inline .platform-dropdown {
+        width: 100%;
+      }
+
+      .platform-select-inline .platform-trigger {
+        min-height: 38px;
+      }
+
+      .platform-dropdown {
+        position: relative;
+        width: min(320px, 100%);
+      }
+
+      .platform-trigger {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: var(--card);
+        border: 1px solid var(--border);
+      }
+
+      .platform-trigger.is-empty .platform-trigger-text {
+        color: #94a3b8;
+      }
+
+      .platform-trigger-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .platform-caret {
+        color: #64748b;
+        font-size: 12px;
+        transition: transform 0.15s ease;
+      }
+
+      .platform-dropdown.open .platform-caret {
+        transform: rotate(180deg);
+      }
+
+      .platform-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        width: 100%;
+        z-index: 30;
+        display: none;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--card);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.14);
+      }
+
+      .platform-dropdown.open .platform-menu {
+        display: block;
+      }
+
+      .platform-menu-list {
+        max-height: 200px;
+        overflow: auto;
+        padding: 6px;
+      }
+
+      .platform-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: #334155;
+        font-size: 13px;
+      }
+
+      .platform-option:hover {
+        border-color: #e2e8f0;
+        background: #f8fafc;
+      }
+
+      .platform-option input {
+        margin: 0;
+      }
+
+      .platform-option input[type="checkbox"] {
+        display: inline-block;
+        margin: 0;
+      }
+
+      .platform-menu-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        padding: 6px 8px 8px;
+        border-top: 1px solid #eef2f7;
+      }
+
+      .btn-xs {
+        min-height: 30px;
+        padding: 4px 10px;
+        font-size: 12px;
+        border-radius: 8px;
+      }
+
+      input:not([type="checkbox"]):not([type="radio"]),
+      select,
+      button {
+        min-height: 38px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 14px;
+        line-height: 1.2;
+      }
+
+      input:not([type="checkbox"]):not([type="radio"]),
+      select {
+        width: auto;
+        background: var(--card);
+        color: var(--foreground);
+      }
+
+      input:not([type="checkbox"]):not([type="radio"])::placeholder {
+        color: #94a3b8;
+      }
+
+      input:not([type="checkbox"]):not([type="radio"]):focus,
+      select:focus,
+      button:focus-visible {
+        outline: none;
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.3);
+      }
+
+      input[type="checkbox"],
+      input[type="radio"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--primary);
+        vertical-align: middle;
+      }
+
+      td input.enabled[type="checkbox"] {
+        display: block;
+        margin: 0 auto;
+      }
+
+      button {
+        cursor: pointer;
+        font-weight: 620;
+        background: var(--secondary);
+        color: #0f172a;
+        transition: all 0.15s ease;
+      }
+
+      button:hover:not(:disabled) {
+        background: var(--secondary-hover);
+        border-color: #cbd5e1;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.58;
+      }
+
+      .btn-primary,
+      #triggerBtn,
+      #saveConfigBtn,
+      #historySearchBtn,
+      #triggerConfirmRunBtn {
+        background: var(--primary);
+        color: var(--primary-foreground);
+        border-color: var(--primary);
+      }
+
+      .btn-primary:hover:not(:disabled),
+      #triggerBtn:hover:not(:disabled),
+      #saveConfigBtn:hover:not(:disabled),
+      #historySearchBtn:hover:not(:disabled),
+      #triggerConfirmRunBtn:hover:not(:disabled) {
+        background: #020617;
+        border-color: #020617;
+      }
+
+      .btn-secondary {
+        background: var(--secondary);
+        color: #0f172a;
+        border-color: var(--border);
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        background: var(--secondary-hover);
+        border-color: #cbd5e1;
+      }
+
+      .btn-ghost,
+      #historyResetBtn,
+      #detailCloseBtn,
+      #riskEventsCloseBtn,
+      #triggerConfirmCloseBtn,
+      #historyPrevBtn,
+      #historyNextBtn,
+      #triggerSelectEnabledBtn,
+      #triggerSelectRecentBtn,
+      #triggerSelectAllBtn {
+        background: transparent;
+        border-color: transparent;
+      }
+
+      .btn-ghost:hover:not(:disabled),
+      #historyResetBtn:hover:not(:disabled),
+      #detailCloseBtn:hover:not(:disabled),
+      #riskEventsCloseBtn:hover:not(:disabled),
+      #triggerConfirmCloseBtn:hover:not(:disabled),
+      #historyPrevBtn:hover:not(:disabled),
+      #historyNextBtn:hover:not(:disabled),
+      #triggerSelectEnabledBtn:hover:not(:disabled),
+      #triggerSelectRecentBtn:hover:not(:disabled),
+      #triggerSelectAllBtn:hover:not(:disabled) {
+        background: var(--secondary-hover);
+        border-color: #e2e8f0;
+      }
+
+      .btn-destructive,
+      #triggerPresetDeleteBtn,
+      #triggerClearBtn,
+      button[data-remove],
+      .delRow {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
+      }
+
+      .btn-destructive:hover:not(:disabled),
+      #triggerPresetDeleteBtn:hover:not(:disabled),
+      #triggerClearBtn:hover:not(:disabled),
+      button[data-remove]:hover:not(:disabled),
+      .delRow:hover:not(:disabled) {
+        background: #fee2e2;
+        border-color: #fca5a5;
+      }
+
+      #triggerBtn {
+        min-width: 240px;
+        padding: 0 18px;
+      }
+
+      .input-wide {
+        min-width: 420px;
+        flex: 1;
+      }
+
+      #slotsContainer {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .slot-row {
+        display: grid;
+        align-items: center;
+        gap: 10px;
+        grid-template-columns: 90px 90px 20px 90px 70px minmax(220px, 1fr);
+      }
+
+      .slot-row .muted {
+        white-space: nowrap;
+      }
+
+      .slot-label {
+        font-weight: 620;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 8px;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--card);
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 10px 8px;
+        text-align: left;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: middle;
+        font-size: 13px;
+      }
+
+      th {
+        background: #f8fafc;
+        color: #334155;
+        font-weight: 630;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      tr:hover td {
+        background: #f8fafc;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .ok {
+        color: var(--ok);
+        font-size: 13px;
+      }
+
+      .err {
+        color: var(--err);
+        font-size: 13px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 2px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--muted-bg);
+        color: #475569;
+        font-size: 12px;
+        font-weight: 560;
+      }
+
+      .status-success {
+        color: #166534;
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+      }
+
+      .status-failed {
+        color: #991b1b;
+        border-color: #fecaca;
+        background: #fef2f2;
+      }
+
+      .status-partial {
+        color: #92400e;
+        border-color: #fde68a;
+        background: #fffbeb;
+      }
+
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+        gap: 10px;
+        margin: 8px 0;
+      }
+
+      .stat {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #f8fafc;
+        padding: 11px;
+      }
+
+      .stat .label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .stat .value {
+        margin-top: 4px;
+        font-size: 20px;
+        font-weight: 650;
+      }
+
+      .pager {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+
+      .modal-mask {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 9999;
+        background: rgba(2, 6, 23, 0.5);
+      }
+
+      .modal {
+        width: min(860px, 94vw);
+        max-height: 82vh;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--card);
+        box-shadow: 0 16px 40px rgba(2, 6, 23, 0.25);
+        padding: 16px;
+      }
+
+      .confirm-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .keyword-pick-list {
+        max-height: 320px;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fcfdff;
+        padding: 10px;
+      }
+
+      .keyword-pick-item {
+        display: grid;
+        align-items: center;
+        gap: 8px;
+        grid-template-columns: 24px 1fr auto;
+        padding: 9px 6px;
+        border-bottom: 1px solid #eef2f7;
+      }
+
+      .keyword-pick-item:last-child {
+        border-bottom: none;
+      }
+
+      .keyword-pick-name {
+        font-weight: 620;
+      }
+
+      .keyword-pick-meta {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .trigger-tip {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .preset-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .quick-add-wrap {
+        padding: 12px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 10px;
+        background: #f8fafc;
+      }
+
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #f8fafc;
+        padding: 10px;
+      }
+
+      @media (max-width: 900px) {
+        .topbar-main {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .manual-trigger {
+          min-width: auto;
+          align-items: flex-start;
+        }
+
+        .manual-trigger .muted {
+          text-align: left;
+        }
+
+        .slot-row {
+          grid-template-columns: repeat(4, minmax(64px, auto));
+          grid-auto-rows: minmax(40px, auto);
+        }
+
+        .slot-row .muted {
+          grid-column: 1 / -1;
+        }
+
+        .grid-4 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .platform-select,
+        .platform-dropdown {
+          width: 100%;
+          min-width: 0;
+        }
+
+        table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+      }
+
+      @media (max-width: 780px) {
+        .app {
+          padding: 16px 12px 28px;
+        }
+
+        .tabs {
+          overflow-x: auto;
+        }
+
+        .input-wide {
+          min-width: 100%;
+        }
+
+        #triggerBtn {
+          width: 100%;
+          max-width: 360px;
+        }
+
+        .grid-4 {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="topbar">
+        <div class="topbar-main">
+          <div class="headline">
+            <h1>选题助手</h1>
+            <span class="muted">按任务、历史、配置三个分区管理抓取流程</span>
+            <div class="runtime-status">
+              <span id="runtimeLamp" class="runtime-lamp"></span>
+              <span id="runtimeStatusText">系统状态检测中...</span>
+            </div>
+          </div>
+          <div class="manual-trigger">
+            <button id="triggerBtn" class="btn-primary">立即执行一次抓取</button>
+            <span id="triggerStatus" class="muted"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs-wrap">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="task">任务</button>
+          <button class="tab-btn" data-tab="history">历史</button>
+          <button class="tab-btn" data-tab="config">配置</button>
+        </div>
+      </div>
+
+    <section id="tab-task" class="tab-panel active">
+      <div class="task-stack">
+        <div class="card">
+          <h2>定时任务</h2>
+          <div class="row">
+            <label class="toggle-field"><input type="checkbox" id="scheduleEnabled" /> <span>启用</span></label>
+          <button id="addTimeBtn" class="btn-secondary">新增时间点</button>
+          <button id="saveScheduleBtn" class="btn-secondary">保存定时</button>
+          </div>
+          <div id="slotsContainer"></div>
+          <div id="scheduleStatus" class="muted"></div>
+        </div>
+
+      <div class="card">
+        <h2>关键词配置</h2>
+        <div class="row">
+          <input id="newKeyword" placeholder="关键词，如 AIGC" />
+          <label class="field-label" for="newMinLikes">最低点赞：</label><input id="newMinLikes" type="number" min="0" value="3000" style="width:100px" />
+          <label class="field-label">平台：</label>
+          <div id="keywordPlatformSelector" class="platform-select"></div>
+          <label class="toggle-field"><input id="newEnabled" type="checkbox" checked /> <span>启用</span></label>
+          <button id="addKeywordBtn" class="btn-secondary">新增/更新关键词</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>关键词</th><th>平台</th><th>最低点赞</th><th>启用</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="keywordsBody"></tbody>
+        </table>
+        <div id="keywordsStatus" class="muted"></div>
+      </div>
+      <div class="card">
+        <h2>任务中心</h2>
+        <div class="row">
+          <label>状态：</label>
+          <select id="tasksFilterStatus">
+            <option value="">全部</option>
+            <option value="queued">排队中</option>
+            <option value="running">执行中</option>
+            <option value="success">成功</option>
+            <option value="failed">失败</option>
+          </select>
+          <label>数量：</label>
+          <select id="tasksFilterLimit">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+          </select>
+          <button id="refreshTasksBtn" class="btn-secondary">刷新任务</button>
+          <span id="tasksStatus" class="muted"></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>任务ID</th><th>来源</th><th>状态</th><th>排队时间</th><th>开始时间</th><th>结束时间</th><th>耗时</th><th>失败原因</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="tasksBody"></tbody>
+        </table>
+      </div>
+      </div>
+    </section>
+
+    <section id="tab-config" class="tab-panel">
+      <div class="card">
+        <h2>后台配置</h2>
+        <div class="row">
+          <label>API Key：</label>
+          <input id="apiKey" class="input-wide" placeholder="例如 changeme" />
+        </div>
+        <div class="row">
+          <label>飞书机器人 Webhook：</label>
+          <input id="feishuWebhook" class="input-wide" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..." />
+        </div>
+        <div class="row">
+          <label>飞书 Chat ID：</label>
+          <input id="feishuChatId" class="input-wide" placeholder="oc_xxx（应用机器人群聊ID，优先发送）" />
+        </div>
+        <div class="row">
+          <label>抓取模式：</label>
+          <select id="scrapeMode">
+            <option value="headless">无头模式（默认）</option>
+            <option value="headed">有头模式（可见浏览器）</option>
+          </select>
+        </div>
+        <div class="row">
+          <button id="saveConfigBtn" class="btn-primary">保存后台配置</button>
+          <span id="configStatus" class="muted"></span>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-history" class="tab-panel">
+      <div class="history-subtabs">
+        <button class="history-tab-btn active" data-history-tab="tasks">任务记录</button>
+        <button class="history-tab-btn" data-history-tab="risk">风控记录</button>
+      </div>
+
+      <div id="history-panel-tasks" class="history-subpanel active">
+      <div class="card">
+        <h2>任务记录</h2>
+        <div class="row">
+          <label>关键词：</label>
+          <input id="historyKeyword" placeholder="可选，按关键词筛选" />
+          <label>状态：</label>
+          <select id="historyStatus">
+            <option value="">全部</option>
+            <option value="success">成功</option>
+            <option value="partial">部分成功</option>
+            <option value="failed">失败</option>
+          </select>
+          <label>时间范围：</label>
+          <select id="historyDays">
+            <option value="7">最近 7 天</option>
+            <option value="30" selected>最近 30 天</option>
+            <option value="90">最近 90 天</option>
+          </select>
+          <label>每页：</label>
+          <select id="historyLimit">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+          </select>
+          <button id="historySearchBtn" class="btn-primary">查询</button>
+          <button id="historyResetBtn" class="btn-ghost">重置</button>
+        </div>
+
+        <div class="grid-4">
+          <div class="stat"><div class="label">总执行次数</div><div id="sumTotalRuns" class="value">0</div></div>
+          <div class="stat"><div class="label">成功次数</div><div id="sumSuccessRuns" class="value">0</div></div>
+          <div class="stat"><div class="label">失败次数</div><div id="sumFailedRuns" class="value">0</div></div>
+          <div class="stat"><div class="label">累计入库内容</div><div id="sumContents" class="value">0</div></div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>执行时间</th><th>关键词</th><th>入库条数</th><th>状态</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <div class="pager">
+          <button id="historyPrevBtn" class="btn-ghost">上一页</button>
+          <button id="historyNextBtn" class="btn-ghost">下一页</button>
+          <span id="historyPageInfo" class="muted">第 1 页</span>
+          <span id="historyStatusText" class="muted"></span>
+        </div>
+      </div>
+      </div>
+
+      <div id="history-panel-risk" class="history-subpanel">
+        <div class="card">
+          <h2>风控记录</h2>
+          <div class="muted">用于观察登录失效、验证拦截、平台风控等异常信号。</div>
+          <div class="grid-4" style="margin-top: 12px;">
+            <div class="stat">
+              <div class="label">总事件数</div>
+              <div id="riskTotalEvents" class="value">0</div>
+            </div>
+            <div class="stat">
+              <div class="label">24小时内</div>
+              <div id="riskRecent24h" class="value">0</div>
+            </div>
+            <div class="stat">
+              <div class="label">最近一次</div>
+              <div id="riskLastEvent" class="value" style="font-size: 13px;">-</div>
+            </div>
+            <div class="stat">
+              <div class="label">平台分布</div>
+              <div id="riskPlatformBreakdown" class="value" style="font-size: 13px;">-</div>
+            </div>
+          </div>
+          <div class="row" style="margin-top: 12px;">
+            <button id="refreshRiskBtn" class="btn-secondary">刷新统计</button>
+            <button id="viewRiskEventsBtn" class="btn-secondary">查看事件列表</button>
+          </div>
+          <div id="riskStatus" class="muted"></div>
+        </div>
+      </div>
+    </section>
+
+    <div id="detailMask" class="modal-mask">
+      <div class="modal">
+        <div class="row" style="justify-content: space-between;">
+          <h2 style="margin:0;">执行详情</h2>
+          <button id="detailCloseBtn" class="btn-ghost">关闭</button>
+        </div>
+        <div id="detailMeta" class="muted"></div>
+        <h3>平台明细</h3>
+        <table>
+          <thead><tr><th>平台</th><th>抓取数</th><th>入库数</th><th>状态</th></tr></thead>
+          <tbody id="detailPlatforms"></tbody>
+        </table>
+        <h3>错误信息</h3>
+        <pre id="detailErrors" class="mono">暂无</pre>
+        <h3>原始明细 JSON</h3>
+        <pre id="detailRaw" class="mono">{}</pre>
+      </div>
+    </div>
+
+    <div id="riskEventsMask" class="modal-mask">
+      <div class="modal">
+        <div class="row" style="justify-content: space-between;">
+          <h2 style="margin:0;">风控事件列表</h2>
+          <button id="riskEventsCloseBtn" class="btn-ghost">关闭</button>
+        </div>
+        <div class="muted" style="margin-bottom: 12px;">最近检测到的登录/验证/风控页面事件</div>
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th><th>平台</th><th>关键词</th><th>阶段</th><th>标记</th><th>恢复建议</th><th>附件</th>
+            </tr>
+          </thead>
+          <tbody id="riskEventsBody"></tbody>
+        </table>
+        <div id="riskEventsStatus" class="muted" style="margin-top: 8px;"></div>
+      </div>
+    </div>
+
+    <div id="triggerConfirmMask" class="modal-mask">
+      <div class="modal">
+        <div class="row" style="justify-content: space-between;">
+          <h2 style="margin:0;">手动触发确认</h2>
+          <button id="triggerConfirmCloseBtn" class="btn-ghost">关闭</button>
+        </div>
+        <div class="confirm-grid">
+          <div>
+            <h3 style="margin: 8px 0;">本次抓取模式</h3>
+            <select id="triggerConfirmMode">
+              <option value="headless">无头模式（推荐）</option>
+              <option value="headed">有头模式（可见浏览器）</option>
+            </select>
+            <div class="trigger-tip">默认继承“配置”中的抓取模式，本次可临时改动。</div>
+          </div>
+          <div class="quick-add-wrap">
+            <div class="row" style="justify-content: space-between; margin-bottom: 6px;">
+              <h3 style="margin: 0;">临时新增关键词（本次可直接选中）</h3>
+              <span class="trigger-tip">会同步写入“关键词配置”列表</span>
+            </div>
+            <div class="row">
+              <input id="triggerNewKeyword" placeholder="输入关键词，如 AI编程" />
+              <label class="field-label" for="triggerNewMinLikes">最低点赞：</label>
+              <input id="triggerNewMinLikes" type="number" min="0" value="3000" style="width:100px" />
+              <label class="toggle-field"><input id="triggerNewEnabled" type="checkbox" checked /> <span>启用</span></label>
+              <button id="triggerAddKeywordBtn" class="btn-secondary" type="button">新增并加入本次</button>
+            </div>
+            <div class="row">
+              <label class="field-label">平台：</label>
+              <div id="triggerPlatformSelector" class="platform-select"></div>
+            </div>
+            <div id="triggerAddKeywordStatus" class="trigger-tip"></div>
+          </div>
+          <div>
+            <div class="row" style="justify-content: space-between;">
+              <h3 style="margin: 8px 0;">本次关键词范围</h3>
+              <div class="row" style="margin: 0;">
+                <button id="triggerSelectEnabledBtn" class="btn-ghost" type="button">恢复默认勾选</button>
+                <button id="triggerSelectRecentBtn" class="btn-ghost" type="button">恢复最近选择</button>
+                <button id="triggerSelectAllBtn" class="btn-ghost" type="button">全选</button>
+                <button id="triggerClearBtn" class="btn-destructive" type="button">清空</button>
+              </div>
+            </div>
+            <div id="triggerKeywordList" class="keyword-pick-list"></div>
+            <div id="triggerConfirmHint" class="trigger-tip"></div>
+            <div class="preset-row">
+              <select id="triggerPresetSelect">
+                <option value="">选择预设...</option>
+              </select>
+              <input id="triggerPresetName" placeholder="预设名，如 AIGC测试集" />
+              <button id="triggerPresetSaveBtn" class="btn-secondary" type="button">保存为预设</button>
+              <button id="triggerPresetApplyBtn" class="btn-secondary" type="button">应用预设</button>
+              <button id="triggerPresetDeleteBtn" class="btn-destructive" type="button">删除预设</button>
+            </div>
+            <div id="triggerPresetStatus" class="trigger-tip"></div>
+          </div>
+          <div class="row" style="justify-content: flex-end;">
+            <button id="triggerConfirmRunBtn" class="btn-primary">确认并执行</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <script>
+      const apiKeyInput = document.getElementById("apiKey");
+      const feishuWebhookInput = document.getElementById("feishuWebhook");
+      const feishuChatIdInput = document.getElementById("feishuChatId");
+      const scrapeModeEl = document.getElementById("scrapeMode");
+      const configStatus = document.getElementById("configStatus");
+      const triggerStatus = document.getElementById("triggerStatus");
+      const scheduleStatus = document.getElementById("scheduleStatus");
+      const keywordsStatus = document.getElementById("keywordsStatus");
+      const tasksStatus = document.getElementById("tasksStatus");
+      const tasksFilterStatusEl = document.getElementById("tasksFilterStatus");
+      const tasksFilterLimitEl = document.getElementById("tasksFilterLimit");
+      const runtimeLampEl = document.getElementById("runtimeLamp");
+      const runtimeStatusTextEl = document.getElementById("runtimeStatusText");
+      const historyStatusText = document.getElementById("historyStatusText");
+      const slotsContainer = document.getElementById("slotsContainer");
+      const triggerConfirmMask = document.getElementById("triggerConfirmMask");
+      const triggerConfirmModeEl = document.getElementById("triggerConfirmMode");
+      const triggerKeywordListEl = document.getElementById("triggerKeywordList");
+      const triggerConfirmHintEl = document.getElementById("triggerConfirmHint");
+      const triggerNewKeywordEl = document.getElementById("triggerNewKeyword");
+      const triggerNewMinLikesEl = document.getElementById("triggerNewMinLikes");
+      const triggerNewEnabledEl = document.getElementById("triggerNewEnabled");
+      const triggerAddKeywordStatusEl = document.getElementById("triggerAddKeywordStatus");
+      const triggerConfirmRunBtn = document.getElementById("triggerConfirmRunBtn");
+      const triggerPresetSelectEl = document.getElementById("triggerPresetSelect");
+      const triggerPresetNameEl = document.getElementById("triggerPresetName");
+      const triggerPresetStatusEl = document.getElementById("triggerPresetStatus");
+      const keywordPlatformSelectorEl = document.getElementById("keywordPlatformSelector");
+      const triggerPlatformSelectorEl = document.getElementById("triggerPlatformSelector");
+      const TRIGGER_RECENT_STORAGE_KEY = "ta_trigger_recent_v1";
+      const TRIGGER_PRESETS_STORAGE_KEY = "ta_trigger_presets_v1";
+      let currentSlots = [];
+      let historyOffset = 0;
+      let historyTotal = 0;
+      let currentAuthKey = "";
+      let keywordRows = [];
+      let supportedPlatforms = ["xiaohongshu"];
+      let isTriggering = false;
+      let runtimePollTimer = null;
+      let platformDropdownGlobalBound = false;
+      const PLATFORM_NAMES = {
+        xiaohongshu: "小红书",
+        douyin: "抖音",
+        bilibili: "B站",
+      };
+      const triggerModalState = {
+        selectedIds: new Set(),
+        defaultEnabledIds: new Set(),
+      };
+
+      function apiKey() { return apiKeyInput.value.trim(); }
+      function authHeaders() {
+        return { "Content-Type": "application/json", "X-API-Key": currentAuthKey || apiKey() };
+      }
+      function setStatus(el, msg, ok = true) { el.textContent = msg; el.className = ok ? "ok" : "err"; }
+      function pad2(n) { return String(n).padStart(2, "0"); }
+      function escapeHtml(s) {
+        return String(s || "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+      function formatDate(isoStr) {
+        if (!isoStr) return "-";
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        return d.toLocaleString("zh-CN", { hour12: false });
+      }
+      function platformLabel(name) {
+        const key = String(name || "").trim().toLowerCase();
+        return PLATFORM_NAMES[key] || key || "-";
+      }
+      function platformSummaryText(selected) {
+        const labels = (selected || []).map((p) => platformLabel(p)).filter(Boolean);
+        if (!labels.length) return "未选择平台";
+        if (labels.length === supportedPlatforms.length) return "全部平台";
+        if (labels.length <= 2) return labels.join("、");
+        return `${labels.slice(0, 2).join("、")} +${labels.length - 2}`;
+      }
+      function closeAllPlatformDropdowns(exceptNode = null) {
+        document.querySelectorAll(".platform-dropdown.open").forEach((node) => {
+          if (exceptNode && node === exceptNode) return;
+          node.classList.remove("open");
+          const trigger = node.querySelector('[data-role="trigger"]');
+          if (trigger) trigger.setAttribute("aria-expanded", "false");
+        });
+      }
+      function ensurePlatformDropdownGlobalHandler() {
+        if (platformDropdownGlobalBound) return;
+        platformDropdownGlobalBound = true;
+        document.addEventListener("click", (event) => {
+          if (event.target.closest(".platform-dropdown")) return;
+          closeAllPlatformDropdowns();
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeAllPlatformDropdowns();
+        });
+      }
+      function updatePlatformDropdownLabel(el) {
+        if (!el) return;
+        const trigger = el.querySelector('[data-role="trigger"]');
+        const textNode = el.querySelector(".platform-trigger-text");
+        if (!trigger || !textNode) return;
+        const selected = collectSelectedPlatforms(el);
+        textNode.textContent = platformSummaryText(selected);
+        trigger.classList.toggle("is-empty", selected.length === 0);
+        trigger.title = selected.length ? selected.map((p) => platformLabel(p)).join("、") : "未选择平台";
+      }
+      function renderPlatformSelector(el, selectedPlatforms) {
+        if (!el) return;
+        ensurePlatformDropdownGlobalHandler();
+        const selected = new Set(
+          (selectedPlatforms || [])
+            .map((x) => String(x || "").trim().toLowerCase())
+            .filter(Boolean)
+        );
+        if (!supportedPlatforms.length) {
+          el.innerHTML = `<span class="muted">暂无平台</span>`;
+          return;
+        }
+        const optionHtml = supportedPlatforms.map((p) => {
+          const checked = selected.has(p) || (!selected.size);
+          return `
+            <label class="platform-option">
+              <input type="checkbox" value="${p}" ${checked ? "checked" : ""} />
+              <span>${platformLabel(p)}</span>
+            </label>
+          `;
+        }).join("");
+        el.innerHTML = `
+          <div class="platform-dropdown">
+            <button type="button" class="platform-trigger" data-role="trigger" aria-expanded="false">
+              <span class="platform-trigger-text"></span>
+              <span class="platform-caret">▾</span>
+            </button>
+            <div class="platform-menu" data-role="menu">
+              <div class="platform-menu-list">${optionHtml}</div>
+              <div class="platform-menu-actions">
+                <button type="button" class="btn-ghost btn-xs" data-role="select-all">全选</button>
+                <button type="button" class="btn-ghost btn-xs" data-role="clear">清空</button>
+              </div>
+            </div>
+          </div>
+        `;
+        const dropdown = el.querySelector(".platform-dropdown");
+        const trigger = el.querySelector('[data-role="trigger"]');
+        const menu = el.querySelector('[data-role="menu"]');
+        if (!dropdown || !trigger || !menu) return;
+
+        trigger.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const willOpen = !dropdown.classList.contains("open");
+          closeAllPlatformDropdowns(dropdown);
+          dropdown.classList.toggle("open", willOpen);
+          trigger.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        });
+
+        menu.addEventListener("click", (event) => {
+          event.stopPropagation();
+        });
+
+        const allBtn = el.querySelector('[data-role="select-all"]');
+        const clearBtn = el.querySelector('[data-role="clear"]');
+        const options = el.querySelectorAll('.platform-option input[type="checkbox"]');
+        options.forEach((node) => {
+          node.addEventListener("change", () => {
+            updatePlatformDropdownLabel(el);
+          });
+        });
+        if (allBtn) {
+          allBtn.addEventListener("click", () => {
+            options.forEach((node) => { node.checked = true; });
+            updatePlatformDropdownLabel(el);
+          });
+        }
+        if (clearBtn) {
+          clearBtn.addEventListener("click", () => {
+            options.forEach((node) => { node.checked = false; });
+            updatePlatformDropdownLabel(el);
+          });
+        }
+        updatePlatformDropdownLabel(el);
+      }
+      function collectSelectedPlatforms(el) {
+        if (!el) return [];
+        return Array.from(el.querySelectorAll('input[type="checkbox"]:checked'))
+          .map((n) => String(n.value || "").trim().toLowerCase())
+          .filter((v, i, arr) => v && arr.indexOf(v) === i);
+      }
+      function syncTriggerPlatformSelectionFromMain() {
+        const selected = collectSelectedPlatforms(keywordPlatformSelectorEl);
+        triggerPlatformSelectorEl.querySelectorAll('input[type="checkbox"]').forEach((node) => {
+          node.checked = selected.includes(String(node.value || "").trim().toLowerCase());
+        });
+        updatePlatformDropdownLabel(triggerPlatformSelectorEl);
+      }
+      async function loadSupportedPlatforms() {
+        try {
+          const res = await fetch("/api/platforms");
+          if (res.ok) {
+            const rows = await res.json();
+            const normalized = Array.isArray(rows)
+              ? rows.map((x) => String(x || "").trim().toLowerCase()).filter(Boolean)
+              : [];
+            if (normalized.length) supportedPlatforms = normalized;
+          }
+        } catch (_) {}
+        renderPlatformSelector(keywordPlatformSelectorEl, supportedPlatforms);
+        renderPlatformSelector(triggerPlatformSelectorEl, supportedPlatforms);
+      }
+      function statusClass(status) {
+        if (status === "success") return "status-success";
+        if (status === "failed") return "status-failed";
+        return "status-partial";
+      }
+      function statusText(status) {
+        if (status === "success") return "成功";
+        if (status === "failed") return "失败";
+        if (status === "partial") return "部分成功";
+        if (status === "running") return "执行中";
+        if (status === "queued") return "排队中";
+        return status || "-";
+      }
+      function taskStatusClass(status) {
+        if (status === "success") return "status-success";
+        if (status === "failed") return "status-failed";
+        if (status === "running") return "status-partial";
+        if (status === "queued") return "status-partial";
+        return "status-partial";
+      }
+      function toDate(isoStr) {
+        if (!isoStr) return null;
+        const d = new Date(isoStr);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      function formatDuration(startedAt, finishedAt) {
+        const s = toDate(startedAt);
+        if (!s) return "-";
+        const e = toDate(finishedAt) || new Date();
+        const sec = Math.max(0, Math.round((e.getTime() - s.getTime()) / 1000));
+        if (sec < 60) return `${sec}s`;
+        const min = Math.floor(sec / 60);
+        const rem = sec % 60;
+        return `${min}m ${rem}s`;
+      }
+      function loadRecentTriggerSelection() {
+        try {
+          const raw = localStorage.getItem(TRIGGER_RECENT_STORAGE_KEY);
+          if (!raw) return { mode: "", keyword_ids: [] };
+          const data = JSON.parse(raw);
+          const ids = Array.isArray(data.keyword_ids) ? data.keyword_ids.map((n) => Number(n)).filter((n) => Number.isInteger(n) && n > 0) : [];
+          const mode = data.mode === "headed" ? "headed" : data.mode === "headless" ? "headless" : "";
+          return { mode, keyword_ids: Array.from(new Set(ids)) };
+        } catch (_) {
+          return { mode: "", keyword_ids: [] };
+        }
+      }
+      function saveRecentTriggerSelection(mode, keywordIds) {
+        const payload = {
+          mode: mode === "headed" ? "headed" : "headless",
+          keyword_ids: Array.from(new Set((keywordIds || []).map((n) => Number(n)).filter((n) => Number.isInteger(n) && n > 0))),
+          saved_at: new Date().toISOString(),
+        };
+        localStorage.setItem(TRIGGER_RECENT_STORAGE_KEY, JSON.stringify(payload));
+      }
+      function withApiKey(url) {
+        const key = encodeURIComponent(currentAuthKey || apiKey());
+        if (!key) return url || "";
+        return `${url}${String(url).includes("?") ? "&" : "?"}api_key=${key}`;
+      }
+      function loadTriggerPresets() {
+        try {
+          const raw = localStorage.getItem(TRIGGER_PRESETS_STORAGE_KEY);
+          const data = JSON.parse(raw || "[]");
+          if (!Array.isArray(data)) return [];
+          return data
+            .map((x) => ({
+              name: String(x.name || "").trim(),
+              mode: x.mode === "headed" ? "headed" : "headless",
+              keyword_ids: Array.isArray(x.keyword_ids) ? x.keyword_ids.map((n) => Number(n)).filter((n) => Number.isInteger(n) && n > 0) : [],
+            }))
+            .filter((x) => x.name);
+        } catch (_) {
+          return [];
+        }
+      }
+      function saveTriggerPresets(presets) {
+        localStorage.setItem(TRIGGER_PRESETS_STORAGE_KEY, JSON.stringify(presets || []));
+      }
+      function renderTriggerPresetOptions() {
+        const presets = loadTriggerPresets();
+        const selected = triggerPresetSelectEl.value;
+        triggerPresetSelectEl.innerHTML = `<option value=\"\">选择预设...</option>` +
+          presets.map((p, idx) => `<option value=\"${idx}\">${escapeHtml(p.name)}</option>`).join("");
+        if (selected) triggerPresetSelectEl.value = selected;
+      }
+      function saveCurrentAsPreset() {
+        const name = triggerPresetNameEl.value.trim();
+        if (!name) {
+          triggerPresetStatusEl.textContent = "请输入预设名称";
+          return;
+        }
+        const mode = triggerConfirmModeEl.value === "headed" ? "headed" : "headless";
+        const keyword_ids = getSelectedTriggerKeywordIds();
+        const presets = loadTriggerPresets().filter((p) => p.name !== name);
+        presets.push({ name, mode, keyword_ids });
+        saveTriggerPresets(presets);
+        triggerPresetNameEl.value = "";
+        triggerPresetStatusEl.textContent = `已保存预设：${name}`;
+        renderTriggerPresetOptions();
+      }
+      function applySelectedPreset() {
+        const idx = Number(triggerPresetSelectEl.value);
+        const presets = loadTriggerPresets();
+        if (!Number.isInteger(idx) || idx < 0 || idx >= presets.length) {
+          triggerPresetStatusEl.textContent = "请选择一个预设";
+          return;
+        }
+        const preset = presets[idx];
+        triggerConfirmModeEl.value = preset.mode;
+        triggerModalState.selectedIds = new Set(
+          (preset.keyword_ids || []).filter((id) => keywordRows.some((r) => Number(r.id) === Number(id)))
+        );
+        renderTriggerKeywordList("keep");
+        updateTriggerConfirmHint();
+        triggerPresetStatusEl.textContent = `已应用预设：${preset.name}`;
+      }
+      function deleteSelectedPreset() {
+        const idx = Number(triggerPresetSelectEl.value);
+        const presets = loadTriggerPresets();
+        if (!Number.isInteger(idx) || idx < 0 || idx >= presets.length) {
+          triggerPresetStatusEl.textContent = "请选择一个预设";
+          return;
+        }
+        const name = presets[idx].name;
+        presets.splice(idx, 1);
+        saveTriggerPresets(presets);
+        triggerPresetStatusEl.textContent = `已删除预设：${name}`;
+        renderTriggerPresetOptions();
+      }
+      async function loadRuntimeStatus() {
+        try {
+          const res = await fetch("/api/runtime/status", { headers: authHeaders() });
+          if (!res.ok) {
+            runtimeLampEl.className = "runtime-lamp warn";
+            runtimeStatusTextEl.textContent = "系统状态读取失败";
+            return;
+          }
+          const data = await res.json();
+          const ok = !!(data.backend_ok && data.scheduler_ok && data.task_runner_ok);
+          const partial = !!(data.backend_ok && data.scheduler_ok && !data.task_runner_ok);
+          const loginBlocked = !!data.login_blocked;
+          runtimeLampEl.className = `runtime-lamp ${ok ? "ok" : partial ? "warn" : "err"}`;
+          if (loginBlocked) runtimeLampEl.className = "runtime-lamp warn";
+          const lockText = loginBlocked
+            ? ` · 登录锁定中（${data.login_block_keyword || "未知关键词"}）`
+            : "";
+          runtimeStatusTextEl.textContent =
+            `本地${data.local_health_code} / 公网${data.public_health_code} · 调度${data.scheduler_ok ? "正常" : "异常"} · Runner${data.task_runner_ok ? "正常" : "异常"}${lockText}`;
+        } catch (_) {
+          runtimeLampEl.className = "runtime-lamp err";
+          runtimeStatusTextEl.textContent = "系统状态检测失败";
+        }
+      }
+      function startRuntimePolling() {
+        if (runtimePollTimer) return;
+        loadRuntimeStatus();
+        runtimePollTimer = setInterval(() => {
+          loadRuntimeStatus();
+        }, 15000);
+      }
+      function renderScrapeMode(headless) {
+        scrapeModeEl.value = headless ? "headless" : "headed";
+      }
+      function switchTab(tab) {
+        document.querySelectorAll(".tab-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.tab === tab);
+        });
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.classList.toggle("active", panel.id === `tab-${tab}`);
+        });
+      }
+      function switchHistoryTab(tab) {
+        document.querySelectorAll(".history-tab-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.historyTab === tab);
+        });
+        document.querySelectorAll(".history-subpanel").forEach((panel) => {
+          panel.classList.toggle("active", panel.id === `history-panel-${tab}`);
+        });
+      }
+
+      async function loadSchedule() {
+        try {
+          const res = await fetch("/api/schedule");
+          if (!res.ok) {
+            scheduleStatus.textContent = "读取定时配置失败";
+            return;
+          }
+          const data = await res.json();
+          document.getElementById("scheduleEnabled").checked = !!data.enabled;
+          currentSlots = (data.slots || []).map((s) => ({ hour: s.hour, minute: s.minute, enabled: true }));
+          renderSlots();
+          scheduleStatus.textContent = `当前配置更新时间：${data.updated_at || "-"}`;
+        } catch (_) {
+          scheduleStatus.textContent = "读取定时配置失败";
+        }
+      }
+
+      function renderSlots() {
+        slotsContainer.innerHTML = "";
+        if (!currentSlots.length) {
+          const d = document.createElement("div");
+          d.className = "muted";
+          d.textContent = "暂无时间点，请新增";
+          slotsContainer.appendChild(d);
+          return;
+        }
+        currentSlots.forEach((slot, idx) => {
+          const row = document.createElement("div");
+          row.className = "slot-row";
+          row.innerHTML = `
+            <label class="slot-label">时间点 ${idx + 1}：</label>
+            <input type="number" min="0" max="23" value="${slot.hour}" data-idx="${idx}" data-field="hour" style="width:80px" />
+            <span>:</span>
+            <input type="number" min="0" max="59" value="${slot.minute}" data-idx="${idx}" data-field="minute" style="width:80px" />
+            <button data-remove="${idx}">删除</button>
+            <span class="muted">每天 ${pad2(slot.hour)}:${pad2(slot.minute)} 推送一次</span>
+          `;
+          slotsContainer.appendChild(row);
+        });
+        slotsContainer.querySelectorAll("input[data-field]").forEach((el) => {
+          el.addEventListener("change", () => {
+            const idx = Number(el.dataset.idx);
+            const field = el.dataset.field;
+            currentSlots[idx][field] = Number(el.value);
+          });
+        });
+        slotsContainer.querySelectorAll("button[data-remove]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const idx = Number(btn.dataset.remove);
+            currentSlots.splice(idx, 1);
+            renderSlots();
+          });
+        });
+      }
+
+      async function openTriggerConfirm() {
+        if (isTriggering) {
+          setStatus(triggerStatus, "当前已有任务执行中，请稍后再试", false);
+          return;
+        }
+        await loadKeywords();
+        if (!keywordRows.length) {
+          setStatus(triggerStatus, "暂无关键词，请先在“关键词配置”中添加", false);
+          return;
+        }
+        const recent = loadRecentTriggerSelection();
+        triggerConfirmModeEl.value = recent.mode || (scrapeModeEl.value === "headed" ? "headed" : "headless");
+        triggerNewMinLikesEl.value = document.getElementById("newMinLikes").value || "3000";
+        triggerNewEnabledEl.checked = document.getElementById("newEnabled").checked;
+        triggerAddKeywordStatusEl.textContent = "";
+        triggerPresetStatusEl.textContent = "";
+        syncTriggerPlatformSelectionFromMain();
+        renderTriggerPresetOptions();
+        triggerModalState.defaultEnabledIds = new Set(
+          keywordRows.filter((r) => !!r.enabled).map((r) => Number(r.id))
+        );
+        triggerModalState.selectedIds = new Set(
+          (recent.keyword_ids && recent.keyword_ids.length ? recent.keyword_ids : Array.from(triggerModalState.defaultEnabledIds))
+            .filter((id) => keywordRows.some((r) => Number(r.id) === Number(id)))
+            .map((id) => Number(id))
+        );
+        renderTriggerKeywordList("keep");
+        triggerConfirmMask.style.display = "flex";
+      }
+
+      function closeTriggerConfirm() {
+        triggerConfirmMask.style.display = "none";
+      }
+
+      function renderTriggerKeywordList(mode = "keep") {
+        if (!keywordRows.length) {
+          triggerKeywordListEl.innerHTML = `<div class="muted">暂无关键词</div>`;
+          triggerConfirmHintEl.textContent = "请先新增关键词。";
+          return;
+        }
+        if (mode === "enabled") {
+          triggerModalState.selectedIds = new Set(triggerModalState.defaultEnabledIds);
+        } else if (mode === "recent") {
+          const recent = loadRecentTriggerSelection();
+          triggerModalState.selectedIds = new Set(
+            (recent.keyword_ids || []).filter((id) => keywordRows.some((r) => Number(r.id) === Number(id)))
+          );
+        } else if (mode === "all") {
+          triggerModalState.selectedIds = new Set(keywordRows.map((r) => Number(r.id)));
+        } else if (mode === "none") {
+          triggerModalState.selectedIds = new Set();
+        }
+        const html = keywordRows.map((r) => {
+          const checked = triggerModalState.selectedIds.has(Number(r.id));
+          return `
+            <label class="keyword-pick-item">
+              <input type="checkbox" class="trigger-kw-check" data-id="${r.id}" ${checked ? "checked" : ""} />
+                <div>
+                <div class="keyword-pick-name">${escapeHtml(r.keyword)}</div>
+                <div class="keyword-pick-meta">ID ${r.id} · 最低点赞 ${Number(r.min_likes || 0)} · 平台 ${((r.platforms || []).map((p) => platformLabel(p))).join("、") || "-"}</div>
+              </div>
+              <span class="pill ${r.enabled ? "status-success" : "status-partial"}">${r.enabled ? "默认启用" : "默认禁用"}</span>
+            </label>
+          `;
+        }).join("");
+        triggerKeywordListEl.innerHTML = html;
+        updateTriggerConfirmHint();
+        triggerKeywordListEl.querySelectorAll(".trigger-kw-check").forEach((el) => {
+          el.addEventListener("change", () => {
+            const id = Number(el.dataset.id);
+            if (el.checked) triggerModalState.selectedIds.add(id);
+            else triggerModalState.selectedIds.delete(id);
+            updateTriggerConfirmHint();
+          });
+        });
+      }
+
+      async function addKeywordFromTriggerModal() {
+        const keyword = triggerNewKeywordEl.value.trim();
+        const minLikes = Number(triggerNewMinLikesEl.value || 0);
+        const enabled = !!triggerNewEnabledEl.checked;
+        const selectedPlatforms = collectSelectedPlatforms(triggerPlatformSelectorEl);
+        if (!keyword) {
+          triggerAddKeywordStatusEl.textContent = "请输入关键词";
+          return;
+        }
+        if (!selectedPlatforms.length) {
+          triggerAddKeywordStatusEl.textContent = "请至少选择一个平台";
+          return;
+        }
+        triggerAddKeywordStatusEl.textContent = "保存中...";
+        await upsertKeyword(keyword, minLikes, enabled, selectedPlatforms);
+        await loadKeywords();
+        triggerNewKeywordEl.value = "";
+        triggerAddKeywordStatusEl.textContent = `已新增关键词：${keyword}`;
+        renderTriggerKeywordList("keep");
+        // 默认自动勾选新建词，方便本次直接执行
+        const created = keywordRows.find((k) => k.keyword === keyword);
+        if (created) {
+          triggerModalState.selectedIds.add(Number(created.id));
+          const checkbox = triggerKeywordListEl.querySelector(`.trigger-kw-check[data-id="${created.id}"]`);
+          if (checkbox) checkbox.checked = true;
+          updateTriggerConfirmHint();
+        }
+      }
+
+      function getSelectedTriggerKeywordIds() {
+        return Array.from(triggerModalState.selectedIds).filter((n) => Number.isInteger(n) && n > 0).sort((a, b) => a - b);
+      }
+
+      function updateTriggerConfirmHint() {
+        const ids = getSelectedTriggerKeywordIds();
+        const modeText = triggerConfirmModeEl.value === "headed" ? "有头" : "无头";
+        const estimateSec = ids.length * 25;
+        const estimateText = estimateSec >= 60 ? `${Math.ceil(estimateSec / 60)} 分钟` : `${estimateSec} 秒`;
+        const recent = loadRecentTriggerSelection();
+        const recentText = recent.keyword_ids?.length ? `最近保存 ${recent.keyword_ids.length} 个` : "暂无最近记录";
+        triggerConfirmHintEl.textContent = `已选择 ${ids.length} 个关键词；本次将以${modeText}模式执行（预估耗时 ${estimateText}，${recentText}）。`;
+      }
+
+      async function saveSchedule() {
+        const payload = {
+          enabled: document.getElementById("scheduleEnabled").checked,
+          slots: currentSlots.map((s) => ({ hour: Number(s.hour), minute: Number(s.minute), enabled: true })),
+        };
+        const res = await fetch("/api/schedule", { method: "PUT", headers: authHeaders(), body: JSON.stringify(payload) });
+        if (!res.ok) return setStatus(scheduleStatus, "保存定时失败，请检查 API Key 或参数", false);
+        const data = await res.json();
+        const text = (data.slots || []).map((s) => `${pad2(s.hour)}:${pad2(s.minute)}`).join(" / ");
+        setStatus(scheduleStatus, `定时已保存：${data.enabled ? "启用" : "关闭"} ${text}`);
+        currentSlots = (data.slots || []).map((s) => ({ hour: s.hour, minute: s.minute, enabled: true }));
+        renderSlots();
+      }
+
+      async function loadKeywords() {
+        const body = document.getElementById("keywordsBody");
+        body.innerHTML = "";
+        try {
+          const res = await fetch("/api/keywords");
+          if (!res.ok) {
+            keywordRows = [];
+            body.innerHTML = `<tr><td colspan="6" class="muted">加载关键词失败</td></tr>`;
+            return;
+          }
+          const rows = await res.json();
+          keywordRows = Array.isArray(rows) ? rows : [];
+          if (!keywordRows.length) {
+            body.innerHTML = `<tr><td colspan="6" class="muted">暂无关键词</td></tr>`;
+          }
+          keywordRows.forEach((r) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${r.id}</td>
+              <td><input data-id="${r.id}" class="kw" value="${r.keyword}" /></td>
+              <td>
+                <div class="platform-select platform-select-inline" data-role="row-platform" data-id="${r.id}"></div>
+              </td>
+              <td><input data-id="${r.id}" class="minLikes" type="number" value="${r.min_likes}" style="width:100px" /></td>
+              <td><input data-id="${r.id}" class="enabled" type="checkbox" ${r.enabled ? "checked" : ""} /></td>
+              <td>
+                <button data-id="${r.id}" class="saveRow">保存</button>
+                <button data-id="${r.id}" class="delRow">删除</button>
+              </td>
+            `;
+            body.appendChild(tr);
+          });
+
+          body.querySelectorAll('[data-role="row-platform"]').forEach((el) => {
+            const rowId = Number(el.dataset.id);
+            const row = keywordRows.find((x) => Number(x.id) === rowId);
+            renderPlatformSelector(el, Array.isArray(row?.platforms) ? row.platforms : []);
+          });
+
+          document.querySelectorAll(".saveRow").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const rowId = Number(btn.dataset.id);
+              const k = String(body.querySelector(`.kw[data-id="${rowId}"]`)?.value || "").trim();
+              const minLikes = Number(body.querySelector(`.minLikes[data-id="${rowId}"]`)?.value || 0);
+              const enabled = !!body.querySelector(`.enabled[data-id="${rowId}"]`)?.checked;
+              const rowPlatformEl = body.querySelector(`[data-role="row-platform"][data-id="${rowId}"]`);
+              const rowPlatforms = collectSelectedPlatforms(rowPlatformEl);
+              await upsertKeyword(k, minLikes, enabled, rowPlatforms);
+            });
+          });
+
+          document.querySelectorAll(".delRow").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const id = btn.dataset.id;
+              const res = await fetch(`/api/keywords/${id}`, { method: "DELETE", headers: authHeaders() });
+              if (!res.ok) return setStatus(keywordsStatus, "删除失败，请检查 API Key", false);
+              setStatus(keywordsStatus, "已删除关键词");
+              await loadKeywords();
+            });
+          });
+        } catch (_) {
+          keywordRows = [];
+          body.innerHTML = `<tr><td colspan="6" class="muted">加载关键词失败</td></tr>`;
+        }
+      }
+
+      async function upsertKeyword(keyword, minLikes, enabled, platforms) {
+        if (!keyword) return setStatus(keywordsStatus, "关键词不能为空", false);
+        const selectedPlatforms = Array.isArray(platforms)
+          ? platforms.map((x) => String(x || "").trim().toLowerCase()).filter(Boolean)
+          : collectSelectedPlatforms(keywordPlatformSelectorEl);
+        if (!selectedPlatforms.length) return setStatus(keywordsStatus, "请至少选择一个平台", false);
+        const payload = { keyword, platforms: selectedPlatforms, min_likes: minLikes, enabled };
+        const res = await fetch("/api/keywords", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+        if (!res.ok) return setStatus(keywordsStatus, "保存关键词失败，请检查 API Key", false);
+        setStatus(
+          keywordsStatus,
+          `关键词已保存：${keyword}（${selectedPlatforms.map((p) => platformLabel(p)).join("、")}）`
+        );
+        await loadKeywords();
+      }
+
+      async function triggerScrapeOnce(options = {}) {
+        if (isTriggering) return;
+        isTriggering = true;
+        document.getElementById("triggerBtn").disabled = true;
+        triggerConfirmRunBtn.disabled = true;
+        try {
+          const payload = {
+            keyword_ids: options.keyword_ids || [],
+            scrape_headless: options.scrape_headless,
+          };
+          const res = await fetch("/api/scrape/trigger", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            isTriggering = false;
+            document.getElementById("triggerBtn").disabled = false;
+            triggerConfirmRunBtn.disabled = false;
+            if (err && err.code === "LOGIN_BLOCKED") {
+              return setStatus(triggerStatus, err.hint || "当前登录风控锁定中：请扫码后在飞书发送“已登录”", false);
+            }
+            return setStatus(triggerStatus, err.hint || err.message || "触发失败，请检查 API Key", false);
+          }
+          const data = await res.json().catch(() => ({}));
+          const modeText = payload.scrape_headless === false ? "有头" : "无头";
+          const countText = (payload.keyword_ids || []).length;
+          const taskId = data.task_id || "-";
+          const position = Number(data.position || 1);
+          setStatus(
+            triggerStatus,
+            `任务已入队（${taskId.slice(0, 8)}，${modeText}，${countText}个关键词，前方${Math.max(0, position - 1)}个）`
+          );
+          await loadTasks();
+          if (taskId && taskId !== "-") {
+            watchTaskStatus(taskId);
+          }
+          // 立即刷新一次
+          setTimeout(() => {
+            loadHistory(true);
+            loadRiskStats();
+            loadTasks();
+          }, 2000);
+          // 30秒后再刷新一次（任务可能还在执行）
+          setTimeout(() => {
+            loadHistory(true);
+            loadRiskStats();
+            loadTasks();
+            setStatus(triggerStatus, "任务可能已完成，请查看历史记录和飞书消息");
+            isTriggering = false;
+            document.getElementById("triggerBtn").disabled = false;
+            triggerConfirmRunBtn.disabled = false;
+          }, 30000);
+        } catch (_) {
+          isTriggering = false;
+          document.getElementById("triggerBtn").disabled = false;
+          triggerConfirmRunBtn.disabled = false;
+          return setStatus(triggerStatus, "触发失败，请检查网络或后端状态", false);
+        }
+      }
+
+      async function loadTasks() {
+        try {
+          const status = tasksFilterStatusEl.value || "";
+          const limit = Number(tasksFilterLimitEl.value || 20);
+          const qs = new URLSearchParams({ limit: String(limit) });
+          if (status) qs.set("status", status);
+          const res = await fetch(`/api/tasks?${qs.toString()}`, { headers: authHeaders() });
+          if (!res.ok) {
+            tasksStatus.textContent = "加载任务失败";
+            return;
+          }
+          const rows = await res.json();
+          const body = document.getElementById("tasksBody");
+          body.innerHTML = "";
+          if (!rows.length) {
+            body.innerHTML = `<tr><td colspan="9" class="muted">暂无任务</td></tr>`;
+          } else {
+            rows.forEach((r) => {
+              const tr = document.createElement("tr");
+              const errorSummaryCore = r.error_code || r.error_message
+                ? `${r.error_code || ""}${r.error_code && r.error_message ? "：" : ""}${r.error_message || ""}`
+                : "-";
+              const extParts = [];
+              if (r.failure_category) extParts.push(`分类:${r.failure_category}`);
+              if (Number(r.retry_count || 0) > 0) extParts.push(`重试:${r.retry_count}`);
+              const errorSummary = extParts.length ? `${errorSummaryCore} (${extParts.join(" / ")})` : errorSummaryCore;
+              const actionBtn = (r.failed_history_log_id && (r.status === "failed" || r.status === "partial"))
+                ? `<button data-open-log="${r.failed_history_log_id}">查看失败详情</button>`
+                : `<span class="muted">-</span>`;
+              tr.innerHTML = `
+                <td class="mono">${escapeHtml((r.task_id || "").slice(0, 8))}</td>
+                <td>${escapeHtml(r.trigger_source || "-")}</td>
+                <td><span class="pill ${taskStatusClass(r.status)}">${escapeHtml(statusText(r.status || "-"))}</span></td>
+                <td>${escapeHtml(formatDate(r.queued_at))}</td>
+                <td>${escapeHtml(formatDate(r.started_at))}</td>
+                <td>${escapeHtml(formatDate(r.finished_at))}</td>
+                <td>${escapeHtml(formatDuration(r.started_at, r.finished_at))}${r.queue_position > 0 ? `（排队#${r.queue_position}）` : ""}</td>
+                <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(errorSummary)}">${escapeHtml(errorSummary)}</td>
+                <td>${actionBtn}</td>
+              `;
+              body.appendChild(tr);
+            });
+            body.querySelectorAll("button[data-open-log]").forEach((btn) => {
+              btn.addEventListener("click", () => openHistoryDetail(Number(btn.dataset.openLog)));
+            });
+          }
+          tasksStatus.textContent = `任务数：${rows.length}${status ? `（${statusText(status)}）` : ""}`;
+        } catch (_) {
+          tasksStatus.textContent = "加载任务失败";
+        }
+      }
+
+      function watchTaskStatus(taskId) {
+        let tries = 0;
+        const timer = setInterval(async () => {
+          tries += 1;
+          const res = await fetch(`/api/tasks/${taskId}`, { headers: authHeaders() });
+          if (!res.ok) {
+            if (tries > 12) clearInterval(timer);
+            return;
+          }
+          const row = await res.json();
+          await loadTasks();
+          if (row.status === "success") {
+            setStatus(triggerStatus, `任务 ${taskId.slice(0, 8)} 已完成`);
+            clearInterval(timer);
+            return;
+          }
+          if (row.status === "failed") {
+            setStatus(triggerStatus, `任务 ${taskId.slice(0, 8)} 失败：${row.error_code || "未知错误"}`, false);
+            clearInterval(timer);
+            return;
+          }
+          if (row.status === "partial") {
+            setStatus(triggerStatus, `任务 ${taskId.slice(0, 8)} 部分成功：请查看失败详情`, false);
+            clearInterval(timer);
+            return;
+          }
+          if (tries > 60) {
+            clearInterval(timer);
+          }
+        }, 5000);
+      }
+
+      async function saveSystemConfig() {
+        const payload = {
+          api_key: apiKeyInput.value.trim(),
+          feishu_webhook_url: feishuWebhookInput.value.trim(),
+          feishu_chat_id: feishuChatIdInput.value.trim(),
+          scrape_headless: scrapeModeEl.value !== "headed",
+        };
+        const res = await fetch("/api/system-config", {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return setStatus(configStatus, `保存失败：${err.detail || "请检查当前 API Key"}`, false);
+        }
+        const data = await res.json();
+        currentAuthKey = data.api_key || currentAuthKey;
+        apiKeyInput.value = data.api_key || "";
+        feishuWebhookInput.value = data.feishu_webhook_url || "";
+        feishuChatIdInput.value = data.feishu_chat_id || "";
+        renderScrapeMode(!!data.scrape_headless);
+        setStatus(configStatus, "后台配置已保存并生效");
+      }
+
+      function currentHistoryParams() {
+        return {
+          keyword: document.getElementById("historyKeyword").value.trim(),
+          status: document.getElementById("historyStatus").value,
+          days: Number(document.getElementById("historyDays").value),
+          limit: Number(document.getElementById("historyLimit").value),
+          offset: historyOffset,
+        };
+      }
+
+      async function loadHistory(reset = false) {
+        try {
+          if (reset) historyOffset = 0;
+          const p = currentHistoryParams();
+          const qs = new URLSearchParams({
+            keyword: p.keyword,
+            status: p.status,
+            days: String(p.days),
+            limit: String(p.limit),
+            offset: String(p.offset),
+          });
+          const res = await fetch(`/api/history?${qs.toString()}`);
+          if (!res.ok) {
+            historyStatusText.textContent = "加载历史记录失败";
+            return;
+          }
+          const data = await res.json();
+          historyTotal = data.total || 0;
+          renderHistorySummary(data.summary || {});
+          renderHistoryTable(data.items || []);
+          const page = Math.floor((data.offset || 0) / (data.limit || 1)) + 1;
+          const totalPage = Math.max(1, Math.ceil((data.total || 0) / (data.limit || 1)));
+          document.getElementById("historyPageInfo").textContent = `第 ${page} / ${totalPage} 页`;
+          historyStatusText.textContent = `共 ${data.total || 0} 条执行记录`;
+        } catch (_) {
+          historyStatusText.textContent = "加载历史记录失败";
+        }
+      }
+
+      function renderHistorySummary(sum) {
+        document.getElementById("sumTotalRuns").textContent = sum.total_runs || 0;
+        document.getElementById("sumSuccessRuns").textContent = sum.success_runs || 0;
+        document.getElementById("sumFailedRuns").textContent = sum.failed_runs || 0;
+        document.getElementById("sumContents").textContent = sum.total_contents || 0;
+      }
+
+      function renderHistoryTable(items) {
+        const body = document.getElementById("historyBody");
+        body.innerHTML = "";
+        if (!items.length) {
+          body.innerHTML = `<tr><td colspan="6" class="muted">暂无记录</td></tr>`;
+          return;
+        }
+        items.forEach((r) => {
+          const tr = document.createElement("tr");
+          const countText = r.content_count > 0 ? `${r.content_count}` : `<span class="muted">0</span>`;
+          tr.innerHTML = `
+            <td>${r.id}</td>
+            <td>${escapeHtml(formatDate(r.pushed_at))}</td>
+            <td>${escapeHtml(r.keyword)}</td>
+            <td>${countText}</td>
+            <td><span class="pill ${statusClass(r.status)}">${statusText(r.status)}</span></td>
+            <td><button data-detail-id="${r.id}">查看详情</button></td>
+          `;
+          body.appendChild(tr);
+        });
+        body.querySelectorAll("button[data-detail-id]").forEach((btn) => {
+          btn.addEventListener("click", () => openHistoryDetail(Number(btn.dataset.detailId)));
+        });
+      }
+
+      async function openHistoryDetail(id) {
+        const res = await fetch(`/api/history/${id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        let detailObj = {};
+        try { detailObj = data.detail ? JSON.parse(data.detail) : {}; } catch (_) { detailObj = {}; }
+        document.getElementById("detailMeta").textContent =
+          `ID ${data.id} | 关键词 ${data.keyword} | 时间 ${formatDate(data.pushed_at)} | 状态 ${statusText(data.status)} | 入库 ${data.content_count}`;
+        renderDetailPlatforms(detailObj.per_platform || {});
+        renderDetailErrors(detailObj.errors || []);
+        document.getElementById("detailRaw").textContent = JSON.stringify(detailObj, null, 2);
+        document.getElementById("detailMask").style.display = "flex";
+      }
+
+      function renderDetailPlatforms(perPlatform) {
+        const body = document.getElementById("detailPlatforms");
+        body.innerHTML = "";
+        const keys = Object.keys(perPlatform || {});
+        if (!keys.length) {
+          body.innerHTML = `<tr><td colspan="4" class="muted">无平台明细</td></tr>`;
+          return;
+        }
+        keys.forEach((k) => {
+          const v = perPlatform[k] || {};
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${escapeHtml(k)}</td>
+            <td>${Number(v.found || 0)}</td>
+            <td>${Number(v.saved || 0)}</td>
+            <td><span class="pill ${statusClass(v.status)}">${statusText(v.status)}</span></td>
+          `;
+          body.appendChild(tr);
+        });
+      }
+
+      function renderDetailErrors(errors) {
+        if (!errors || !errors.length) {
+          document.getElementById("detailErrors").textContent = "暂无";
+          return;
+        }
+        document.getElementById("detailErrors").textContent = JSON.stringify(errors, null, 2);
+      }
+
+      async function loadRiskStats() {
+        try {
+          const res = await fetch("/api/risk/stats");
+          if (!res.ok) {
+            document.getElementById("riskStatus").textContent = "加载风控统计失败";
+            return;
+          }
+          const data = await res.json();
+          document.getElementById("riskTotalEvents").textContent = data.total_events || 0;
+          document.getElementById("riskRecent24h").textContent = data.recent_events_24h || 0;
+          document.getElementById("riskLastEvent").textContent = data.last_event_at
+            ? formatDate(data.last_event_at)
+            : "-";
+          const breakdown = data.platform_breakdown || {};
+          const breakdownText =
+            Object.keys(breakdown).length > 0
+              ? Object.entries(breakdown)
+                  .map(([k, v]) => `${k}:${v}`)
+                  .join(" ")
+              : "-";
+          document.getElementById("riskPlatformBreakdown").textContent = breakdownText;
+          document.getElementById("riskStatus").textContent = "";
+        } catch (_) {
+          document.getElementById("riskStatus").textContent = "加载风控统计失败";
+        }
+      }
+
+      async function viewRiskEvents() {
+        const res = await fetch("/api/risk/events?limit=50", { headers: authHeaders() });
+        if (!res.ok) {
+          document.getElementById("riskEventsStatus").textContent = "加载失败";
+          return;
+        }
+        const events = await res.json();
+        const body = document.getElementById("riskEventsBody");
+        body.innerHTML = "";
+        if (!events.length) {
+          body.innerHTML = `<tr><td colspan="7" class="muted">暂无风控事件记录</td></tr>`;
+          document.getElementById("riskEventsStatus").textContent = "";
+        } else {
+          events.forEach((e) => {
+            let flags = "-";
+            try {
+              if (e.flags) {
+                const parsed = JSON.parse(e.flags);
+                flags = Array.isArray(parsed) ? parsed.join(", ") : e.flags;
+              }
+            } catch (_) {
+              flags = e.flags || "-";
+            }
+            const tr = document.createElement("tr");
+            const screenshotLink = e.screenshot_url
+              ? `<a href="${e.screenshot_url}" target="_blank">截图</a>`
+              : `<span class="muted">无截图</span>`;
+            const htmlLink = e.html_url
+              ? `<a href="${e.html_url}" target="_blank">HTML</a>`
+              : `<span class="muted">无快照</span>`;
+            tr.innerHTML = `
+              <td>${escapeHtml(formatDate(e.detected_at))}</td>
+              <td>${escapeHtml(e.platform)}</td>
+              <td>${escapeHtml(e.keyword)}</td>
+              <td><span class="pill">${escapeHtml(e.stage || "-")}</span></td>
+              <td style="font-size: 12px; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(flags)}</td>
+              <td style="font-size: 12px; max-width: 360px;">${escapeHtml(e.recovery_hint || "-")}</td>
+              <td style="font-size: 12px;">${screenshotLink} / ${htmlLink}</td>
+            `;
+            body.appendChild(tr);
+          });
+          document.getElementById("riskEventsStatus").textContent = `共 ${events.length} 条事件`;
+        }
+        document.getElementById("riskEventsMask").style.display = "flex";
+      }
+
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+      });
+      document.querySelectorAll(".history-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => switchHistoryTab(btn.dataset.historyTab));
+      });
+      document.getElementById("saveConfigBtn").addEventListener("click", saveSystemConfig);
+      document.getElementById("triggerBtn").addEventListener("click", openTriggerConfirm);
+      document.getElementById("saveScheduleBtn").addEventListener("click", saveSchedule);
+      document.getElementById("addTimeBtn").addEventListener("click", () => {
+        currentSlots.push({ hour: 9, minute: 0, enabled: true });
+        renderSlots();
+      });
+      document.getElementById("addKeywordBtn").addEventListener("click", async () => {
+        await upsertKeyword(
+          document.getElementById("newKeyword").value.trim(),
+          Number(document.getElementById("newMinLikes").value),
+          document.getElementById("newEnabled").checked,
+          collectSelectedPlatforms(keywordPlatformSelectorEl)
+        );
+      });
+      document.getElementById("historySearchBtn").addEventListener("click", () => loadHistory(true));
+      document.getElementById("historyResetBtn").addEventListener("click", () => {
+        document.getElementById("historyKeyword").value = "";
+        document.getElementById("historyStatus").value = "";
+        document.getElementById("historyDays").value = "30";
+        document.getElementById("historyLimit").value = "20";
+        loadHistory(true);
+      });
+      document.getElementById("historyPrevBtn").addEventListener("click", () => {
+        const limit = Number(document.getElementById("historyLimit").value);
+        historyOffset = Math.max(0, historyOffset - limit);
+        loadHistory(false);
+      });
+      document.getElementById("historyNextBtn").addEventListener("click", () => {
+        const limit = Number(document.getElementById("historyLimit").value);
+        if (historyOffset + limit >= historyTotal) return;
+        historyOffset += limit;
+        loadHistory(false);
+      });
+      document.getElementById("detailCloseBtn").addEventListener("click", () => {
+        document.getElementById("detailMask").style.display = "none";
+      });
+      document.getElementById("detailMask").addEventListener("click", (e) => {
+        if (e.target.id === "detailMask") document.getElementById("detailMask").style.display = "none";
+      });
+      document.getElementById("riskEventsCloseBtn").addEventListener("click", () => {
+        document.getElementById("riskEventsMask").style.display = "none";
+      });
+      document.getElementById("riskEventsMask").addEventListener("click", (e) => {
+        if (e.target.id === "riskEventsMask") document.getElementById("riskEventsMask").style.display = "none";
+      });
+      document.getElementById("triggerConfirmCloseBtn").addEventListener("click", closeTriggerConfirm);
+      document.getElementById("triggerConfirmMask").addEventListener("click", (e) => {
+        if (e.target.id === "triggerConfirmMask") closeTriggerConfirm();
+      });
+      document.getElementById("triggerSelectEnabledBtn").addEventListener("click", () => {
+        renderTriggerKeywordList("enabled");
+      });
+      document.getElementById("triggerSelectRecentBtn").addEventListener("click", () => {
+        renderTriggerKeywordList("recent");
+      });
+      document.getElementById("triggerSelectAllBtn").addEventListener("click", () => {
+        renderTriggerKeywordList("all");
+      });
+      document.getElementById("triggerClearBtn").addEventListener("click", () => {
+        renderTriggerKeywordList("none");
+      });
+      document.getElementById("triggerAddKeywordBtn").addEventListener("click", addKeywordFromTriggerModal);
+      document.getElementById("triggerPresetSaveBtn").addEventListener("click", saveCurrentAsPreset);
+      document.getElementById("triggerPresetApplyBtn").addEventListener("click", applySelectedPreset);
+      document.getElementById("triggerPresetDeleteBtn").addEventListener("click", deleteSelectedPreset);
+      document.getElementById("triggerNewKeyword").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") addKeywordFromTriggerModal();
+      });
+      document.getElementById("triggerConfirmMode").addEventListener("change", updateTriggerConfirmHint);
+      document.getElementById("triggerConfirmRunBtn").addEventListener("click", async () => {
+        const ids = getSelectedTriggerKeywordIds();
+        if (!ids.length) {
+          triggerConfirmHintEl.textContent = "请至少选择一个关键词后再执行。";
+          return;
+        }
+        const runMode = document.getElementById("triggerConfirmMode").value === "headed" ? "headed" : "headless";
+        const scrapeHeadless = runMode !== "headed";
+        saveRecentTriggerSelection(runMode, ids);
+        closeTriggerConfirm();
+        await triggerScrapeOnce({ keyword_ids: ids, scrape_headless: scrapeHeadless });
+      });
+      document.getElementById("refreshRiskBtn").addEventListener("click", loadRiskStats);
+      document.getElementById("viewRiskEventsBtn").addEventListener("click", viewRiskEvents);
+      document.getElementById("refreshTasksBtn").addEventListener("click", loadTasks);
+      tasksFilterStatusEl.addEventListener("change", loadTasks);
+      tasksFilterLimitEl.addEventListener("change", loadTasks);
+
+      (async function init() {
+        startRuntimePolling();
+        await loadSupportedPlatforms();
+        try {
+          const res = await fetch("/api/dashboard/bootstrap");
+          if (res.ok) {
+            const data = await res.json();
+            apiKeyInput.value = data.api_key || "";
+            feishuWebhookInput.value = data.feishu_webhook_url || "";
+            feishuChatIdInput.value = data.feishu_chat_id || "";
+            currentAuthKey = data.api_key || "";
+            renderScrapeMode(!!data.scrape_headless);
+            currentSlots = (data.schedule?.slots || []).map((s) => ({ hour: s.hour, minute: s.minute, enabled: true }));
+            document.getElementById("scheduleEnabled").checked = !!data.schedule?.enabled;
+            renderSlots();
+          }
+        } catch (_) {}
+
+        await Promise.allSettled([
+          loadSchedule(),
+          loadKeywords(),
+          loadHistory(true),
+          loadRiskStats(),
+          loadTasks(),
+        ]);
+        await loadRuntimeStatus();
+
+        // 每30秒自动刷新风控统计
+        setInterval(() => {
+          loadRiskStats();
+          loadTasks();
+        }, 30000);
+      })();
+    </script>
+  </body>
+</html>
